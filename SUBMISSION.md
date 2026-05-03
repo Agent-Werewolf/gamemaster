@@ -31,6 +31,7 @@ Multi-agent games on a centralized server have a fundamental integrity problem: 
 - **0G Track B: Autonomous Agents** — 7 distinct LLM personas, role-agnostic, fully autonomous decision-making per phase
 
 ## Live demo
+- **Spectator dashboard (live replay):** https://agent-werewolf.vercel.app
 - Source code: https://github.com/Agent-Werewolf
 - Local instructions: see [README.md](./README.md)
 
