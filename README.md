@@ -89,7 +89,9 @@ pnpm dev
 | `src/chain.ts` | viem-based onchain client (registry/reputation/archive) |
 | `src/archive.ts` | Merkle root + 0G Storage upload |
 | `src/spectator.ts` | WebSocket + static HTML server |
-| `src/transport.ts` | Envelope canonical signing (for future P2P) |
+| `src/transport.ts` | Envelope canonical signing + `InProcessTransport` + `AxlTransport` (real Gensyn AXL P2P) |
+| `src/axl-mirror.ts` | Subscribes to game emitter and shadow-forwards every event over AXL P2P |
+| `src/axl-witness.ts` | Standalone process that polls the destination AXL node's `/recv` and prints/saves every envelope that arrived over Yggdrasil |
 | `src/setup-0g.ts` | One-time 0G Compute ledger setup |
 
 ## Env vars
@@ -105,6 +107,40 @@ pnpm dev
 | `LLM_MODE` | `mock` for offline test, unset for 0G | unset |
 | `SKIP_OG_STORAGE` | `1` to skip storage upload | unset |
 | `EXIT_AFTER_GAME` | `1` to exit after one game | `0` (server stays up) |
+
+## Run with Gensyn AXL P2P transport
+
+Two AXL nodes (Go binary in `../axl/node.exe`) peer over TLS+Yggdrasil; the
+gamemaster shadow-forwards every signed game event over the overlay, and a
+standalone `axl-witness` process polls the destination node's `/recv` and
+prints/saves every envelope it receives.
+
+```bash
+# Terminal 1: start AXL node A (GM-side / witness side)
+cd ../axl && ./node.exe -config configs/node-a-gm.json
+
+# Terminal 2: start AXL node B (agents-side, dials node A)
+cd ../axl && ./node.exe -config configs/node-b-agents.json
+
+# Terminal 3: witness — polls Node A /recv
+cd gamemaster && \
+  GM_WALLET_ADDR=0xYourGmAddress \
+  AXL_WITNESS_API=http://127.0.0.1:9102 \
+  pnpm tsx src/axl-witness.ts
+
+# Terminal 4: gamemaster with AXL mirror enabled
+cd gamemaster && \
+  AXL_TRANSPORT=1 \
+  AXL_LOCAL_API=http://127.0.0.1:9103 \
+  AXL_DEST_PEER_ID=99cb712e... \
+  pnpm dev
+```
+
+In a typical 4-turn game the witness receives 50+ signed envelopes
+(`PHASE_START`, `DAY_SPEECH`, `DAY_VOTE`, `ELIMINATION`, `GAME_END`,
+`ARCHIVE_AVAILABLE`, etc.). Each envelope's `sig` field is verified against
+the GM wallet address — `✓sig` in the witness output means the bytes that
+crossed the Yggdrasil overlay are byte-identical to what the GM signed.
 
 ## Onchain proof (Galileo testnet)
 - AgentRegistry: [`0x4BAcF8f6D981F5e06462646e85053BD5adF3fb4d`](https://chainscan-galileo.0g.ai/address/0x4BAcF8f6D981F5e06462646e85053BD5adF3fb4d)

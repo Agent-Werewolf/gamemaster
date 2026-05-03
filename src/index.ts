@@ -15,6 +15,8 @@ import { GameOrchestrator } from "./game.js";
 import { buildAndPersistArchive } from "./archive.js";
 import { makeChainClient } from "./chain.js";
 import { SpectatorBroadcast } from "./spectator.js";
+import { AxlTransport } from "./transport.js";
+import { AxlMirror } from "./axl-mirror.js";
 import type { Role } from "./types.js";
 
 async function main(): Promise<void> {
@@ -24,6 +26,26 @@ async function main(): Promise<void> {
   // Spectator UI (static HTML in ../dashboard)
   const spectator = new SpectatorBroadcast(emitter, cfg.httpPort, "../dashboard");
   await spectator.start();
+
+  // ── Gensyn AXL P2P transport (optional mirror) ─────────────────────────
+  // When AXL_TRANSPORT=1 and AXL_DEST_PEER_ID is set, every game event is
+  // ALSO forwarded over real Yggdrasil-over-TLS P2P to a remote AXL peer.
+  // Run `pnpm tsx src/axl-witness.ts` against the destination AXL node to
+  // see envelopes arrive over the wire.
+  let axlMirror: AxlMirror | null = null;
+  if (process.env.AXL_TRANSPORT === "1" && process.env.AXL_DEST_PEER_ID) {
+    const axl = new AxlTransport({
+      localApi: process.env.AXL_LOCAL_API ?? "http://127.0.0.1:9103",
+      destPeerId: process.env.AXL_DEST_PEER_ID,
+      label: "gm-mirror"
+    });
+    axl.startPolling(); // optional, in case witness/GM sends back
+    axlMirror = new AxlMirror(axl, emitter, cfg.gmPrivateKey);
+    log.info({
+      api: process.env.AXL_LOCAL_API ?? "http://127.0.0.1:9103",
+      destPeerId: process.env.AXL_DEST_PEER_ID.slice(0, 16) + "…"
+    }, "AXL P2P mirror enabled — game events will be shadow-forwarded over Yggdrasil");
+  }
 
   // Build LLM client. Use 0G Compute by default; allow OpenAI-compatible fallback for offline dev.
   const useFallback = !!process.env.LLM_FALLBACK_URL;
@@ -151,6 +173,9 @@ async function main(): Promise<void> {
   log.info("=================================");
   log.info(`GAME COMPLETE: ${result.winner} won in ${result.turns.length} turns`);
   log.info(`Archive: ${archiveOut.localPath}`);
+  if (axlMirror) {
+    log.info("AXL mirror was active — check axl-witness logs for received envelopes.");
+  }
   log.info("Press Ctrl+C to stop the spectator server.");
 
   // Keep server alive so dashboard stays connected
