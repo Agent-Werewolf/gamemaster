@@ -109,5 +109,29 @@ pnpm dev
 - ReputationOracle: [`0x5C8061694C8c1b4A2aB39762754D9a0DC549fBB1`](https://chainscan-galileo.0g.ai/address/0x5C8061694C8c1b4A2aB39762754D9a0DC549fBB1)
 - GameArchive: [`0x6a9aff1F4352648b39De2771A1Ed3f0F85E9D764`](https://chainscan-galileo.0g.ai/address/0x6a9aff1F4352648b39De2771A1Ed3f0F85E9D764)
 
+## Troubleshooting
+
+### `Error: 0G LLM 429 Rate limit exceeded`
+The 0G Compute provider caps inference at 10 requests/min. The built-in rate limiter (`src/llm.ts`) sequences calls with a 6.5s gap. If you still see this:
+- Make sure only ONE gamemaster process is running (check port 3030)
+- Increase `RATE_LIMIT_INTERVAL_MS` in `src/llm.ts`
+
+### `Error: getting signature error` (during processResponse)
+This is a non-fatal warning from the 0G Compute SDK's fee accounting. The inference itself succeeds; only the per-call settlement fails. Game continues normally.
+
+### `insufficient funds` during setup
+Wallet needs at least 3.1 OG to create the Compute ledger (3 OG + ~0.1 OG gas). Top up via https://faucet.0g.ai or Discord faucet bot.
+
+### Provider not in list
+0G's provider list changes. Run `pnpm tsx src/setup-0g.ts` to see current providers, then update `OG_COMPUTE_PROVIDER` in `.env` to one of them.
+
+## Verify any past game
+
+```bash
+pnpm tsx src/verify-archive.ts archives/<gameId>.json
+```
+
+This recomputes the Merkle root from the archive JSON and compares to the onchain commit. If they match, the game is provably untampered.
+
 ## License
 MIT.
