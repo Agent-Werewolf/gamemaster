@@ -161,6 +161,37 @@ export interface LLMConfig {
   temperature?: number;
 }
 
+// Global rate limiter — 0G providers cap at 10 req/min. Use 6.5s gap (safe margin).
+const RATE_LIMIT_INTERVAL_MS = 6500;
+let lastCallAt = 0;
+const callQueue: Array<() => Promise<void>> = [];
+let processingQueue = false;
+
+async function rateLimitedCall<T>(fn: () => Promise<T>): Promise<T> {
+  return new Promise((resolve, reject) => {
+    callQueue.push(async () => {
+      try {
+        const wait = Math.max(0, lastCallAt + RATE_LIMIT_INTERVAL_MS - Date.now());
+        if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+        lastCallAt = Date.now();
+        resolve(await fn());
+      } catch (e) {
+        reject(e);
+      }
+    });
+    if (!processingQueue) processQueue();
+  });
+}
+
+async function processQueue(): Promise<void> {
+  processingQueue = true;
+  while (callQueue.length > 0) {
+    const next = callQueue.shift()!;
+    await next();
+  }
+  processingQueue = false;
+}
+
 export class LLMClient {
   private mode: "0g" | "fallback" | "mock";
   private broker: any | null = null;
@@ -184,8 +215,9 @@ export class LLMClient {
       : messages;
 
     if (this.mode === "mock") return this.generateMock(allMessages);
-    if (this.mode === "fallback") return this.generateFallback(allMessages);
-    return this.generate0G(allMessages);
+    // Rate-limit network calls (0G provider caps at 10 req/min)
+    if (this.mode === "fallback") return rateLimitedCall(() => this.generateFallback(allMessages));
+    return rateLimitedCall(() => this.generate0G(allMessages));
   }
 
   private generateMock(messages: ChatMessage[]): Promise<string> {

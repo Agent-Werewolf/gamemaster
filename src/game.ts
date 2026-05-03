@@ -193,8 +193,8 @@ export class GameOrchestrator {
 
   private async runDayDiscussion(turn: TurnRecord): Promise<void> {
     const speakers = this.players.filter((p) => p.alive);
-    // Each alive agent speaks 1-2 times this phase, randomized order
-    const rounds = 2;
+    // Each alive agent speaks once per phase (rate-limit aware)
+    const rounds = Number(process.env.SPEECH_ROUNDS || 1);
     const interval = this.cfg.speechIntervalMs ?? 0;
     for (let round = 0; round < rounds; round++) {
       const order = shuffle(speakers.map((p) => p.agentId));
