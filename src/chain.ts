@@ -162,7 +162,7 @@ export function makeChainClient(cfg: Config) {
         ]
       });
       log.info({ txHash, gameId: args.gameId }, "GameArchive.commitArchive sent");
-      await publicClient.waitForTransactionReceipt({ hash: txHash });
+      await publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 60_000, pollingInterval: 2000 });
       log.info({ txHash }, "GameArchive.commitArchive confirmed");
       return txHash;
     },
@@ -189,7 +189,7 @@ export function makeChainClient(cfg: Config) {
         ]
       });
       log.info({ txHash, gameId: args.gameId }, "ReputationOracle.recordBatch sent");
-      await publicClient.waitForTransactionReceipt({ hash: txHash });
+      await publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 60_000, pollingInterval: 2000 });
       log.info({ txHash }, "ReputationOracle.recordBatch confirmed");
       return txHash;
     }
