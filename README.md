@@ -62,6 +62,8 @@ pnpm dev
 
 Then open **http://localhost:3030** to watch the game live.
 
+> **No local setup?** Watch a pre-recorded real game replay at **https://agent-werewolf.vercel.app** — live archive from 0G Compute LLM, committed onchain at block 31260823.
+
 A complete game runs in ~20 seconds with mock LLM and ~3-5 minutes with real 0G Compute.
 
 ### Run with real 0G Compute LLM
