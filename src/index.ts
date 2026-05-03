@@ -81,7 +81,15 @@ async function main(): Promise<void> {
 
   // Commit onchain (skip if zero address — i.e., contracts not deployed yet)
   const archiveAddr = cfg.deployments.GameArchive;
-  if (archiveAddr && archiveAddr !== "0x0000000000000000000000000000000000000000") {
+  if (process.env.SKIP_ONCHAIN === "1") {
+    log.info("SKIP_ONCHAIN=1 — skipping chain commits");
+    emitter.emit("archive_committed", {
+      gameId: result.gameId,
+      merkleRoot: archiveOut.merkleRoot,
+      storageRoot: archiveOut.storageRoot,
+      note: "onchain commit skipped (SKIP_ONCHAIN=1)"
+    });
+  } else if (archiveAddr && archiveAddr !== "0x0000000000000000000000000000000000000000") {
     try {
       const chain = makeChainClient(cfg);
       const gameIdHex = ("0x" + keccak256(toUtf8Bytes(result.gameId)).slice(2)) as Hex;
