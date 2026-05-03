@@ -23,7 +23,7 @@ Multi-agent games on a centralized server have a fundamental integrity problem: 
   - `AgentRegistry`: [`0x4BAcF8f6D981F5e06462646e85053BD5adF3fb4d`](https://chainscan-galileo.0g.ai/address/0x4BAcF8f6D981F5e06462646e85053BD5adF3fb4d)
   - `ReputationOracle`: [`0x5C8061694C8c1b4A2aB39762754D9a0DC549fBB1`](https://chainscan-galileo.0g.ai/address/0x5C8061694C8c1b4A2aB39762754D9a0DC549fBB1)
   - `GameArchive`: [`0x6a9aff1F4352648b39De2771A1Ed3f0F85E9D764`](https://chainscan-galileo.0g.ai/address/0x6a9aff1F4352648b39De2771A1Ed3f0F85E9D764)
-- 8 GitHub repos under [github.com/Agent-Werewolf](https://github.com/Agent-Werewolf)
+- 9 GitHub repos under [github.com/Agent-Werewolf](https://github.com/Agent-Werewolf), including [`axl`](https://github.com/Agent-Werewolf/axl) (our fork of gensyn-ai/axl with the 2-node hub-and-spoke configs)
 - TypeScript GameMaster service (Node 22)
 - Static HTML spectator dashboard with WebSocket live feed
 
